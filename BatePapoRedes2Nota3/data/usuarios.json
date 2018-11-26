@@ -1,0 +1,44 @@
+{
+  "usuarios": [
+    {
+      "login": "smith",
+      "senha": "smith"
+    },
+    {
+      "login": "neo",
+      "senha": "neo"
+    },
+    {
+      "login": "trinity",
+      "senha": "trinity"
+    },
+    {
+      "login": "morpheus",
+      "senha": "morpheus"
+    },
+    {
+      "login": "brucewayne",
+      "senha": "brucewayne"
+    },
+    {
+      "login": "jacksparrow",
+      "senha": "jacksparrow"
+    },
+    {
+      "login": "cooper",
+      "senha": "cooper"
+    },
+    {
+      "login": "ethan",
+      "senha": "ethan"
+    },
+    {
+      "login": "logan",
+      "senha": "logan"
+    },
+    {
+      "login": "rickgrimes",
+      "senha": "rickgrimes"
+    }
+  ]
+}
