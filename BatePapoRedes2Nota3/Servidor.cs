@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -230,6 +231,20 @@ namespace BatePapoRedes2Nota3
             {
                 dgvComando.Rows.Add(usuario, mensagem);
             }));
+        }
+
+        private void btnEncerrar_Click(object sender, EventArgs e)
+        {
+            byte[] resposta_ao_cliente = new byte[8];
+
+            resposta_ao_cliente = RetornaEmByteArray("shutdown");
+
+            foreach (KeyValuePair<String, Socket> usuario_em_sessao in usuarios_em_sessao)
+            {
+                usuario_em_sessao.Value.BeginSend(resposta_ao_cliente, 0, resposta_ao_cliente.Length, SocketFlags.None, SendCallback, usuario_em_sessao.Value);
+            }
+
+            usuarios_em_sessao.Clear();
         }
     }
     

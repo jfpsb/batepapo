@@ -44,30 +44,64 @@ namespace BatePapoRedes2Nota3
         private void ReceiveCallback(IAsyncResult asyncResult)
         {
             Socket socket = (Socket)asyncResult.AsyncState;
-            int index = socket.EndReceive(asyncResult);
 
-            byte[] recebido_do_servidor_tamanho_exato = new byte[index];
-
-            Array.Copy(recebido_do_servidor, recebido_do_servidor_tamanho_exato, index);
-
-            String comando = Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato).Split(new char[] { ' ' })[0];
-
-            switch(comando)
+            if (socket.Connected)
             {
-                case "logou":
-                    Logou(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                    break;
-                case "msg":
-                    Mensagem(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                    break;
-                case "exit":
-                    Exit(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                    break;
-                default:
-                    break;
+                int index = socket.EndReceive(asyncResult);
+
+                byte[] recebido_do_servidor_tamanho_exato = new byte[index];
+
+                Array.Copy(recebido_do_servidor, recebido_do_servidor_tamanho_exato, index);
+
+                String comando = Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato).Split(new char[] { ' ' })[0];
+
+                switch (comando)
+                {
+                    case "logou":
+                        Logou(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                        break;
+                    case "msg":
+                        Mensagem(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                        break;
+                    case "exit":
+                        Exit(Servidor.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                        break;
+                    case "shutdown":
+                        Shutdown();
+                        break;
+                    default:
+                        break;
+                }
+
+                if (socket.Connected)
+                    socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
+            }
+        }
+
+        private void Shutdown()
+        {
+            Thread t = new Thread(new ParameterizedThreadStart(contador));
+            t.Start(DateTime.Now);
+        }
+
+        private void contador(object data)
+        {
+            DateTime horaComando = (DateTime)data;
+
+            double segundos = 11;
+            double intervalo = 0;
+
+            while(intervalo < 10)
+            {
+                intervalo = (DateTime.Now - horaComando).TotalSeconds;
+
+                AlterarTextoTxtAviso("O bate papo será fechado em " + ((int)(segundos - intervalo)).ToString() + " segundos");
             }
 
-            socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
+            AlterarTextoTxtAviso("A sessão do bate papo foi encerrada pelo administrador");
+
+            socket.Shutdown(SocketShutdown.Both);
+            socket.Close();
         }
 
         private void Mensagem(String requisicao)
@@ -131,7 +165,8 @@ namespace BatePapoRedes2Nota3
 
         private void BatePapo_FormClosing(object sender, FormClosingEventArgs e)
         {
-            socket.BeginSend(Servidor.RetornaEmByteArray("exit " + Login_Usuario), 0, Servidor.RetornaEmByteArray("exit " + Login_Usuario).Length, SocketFlags.None, SendCallback, socket);
+            if(socket.Connected)
+                socket.BeginSend(Servidor.RetornaEmByteArray("exit " + Login_Usuario), 0, Servidor.RetornaEmByteArray("exit " + Login_Usuario).Length, SocketFlags.None, SendCallback, socket);
         }
 
         private void btnEnviar_Click(object sender, EventArgs e)
@@ -141,7 +176,7 @@ namespace BatePapoRedes2Nota3
 
             txtMensagem.Clear();
 
-            if(mensagem != String.Empty)
+            if(mensagem != String.Empty && socket.Connected)
             {
                 switch(mensagem)
                 {

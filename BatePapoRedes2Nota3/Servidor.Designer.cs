@@ -35,13 +35,14 @@
             this.dgvComando = new System.Windows.Forms.DataGridView();
             this.usuario = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.comando = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.btnEncerrar = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dgvComando)).BeginInit();
             this.SuspendLayout();
             // 
             // labelStatus
             // 
             this.labelStatus.AutoSize = true;
-            this.labelStatus.Location = new System.Drawing.Point(96, 24);
+            this.labelStatus.Location = new System.Drawing.Point(11, 24);
             this.labelStatus.Name = "labelStatus";
             this.labelStatus.Size = new System.Drawing.Size(60, 20);
             this.labelStatus.TabIndex = 0;
@@ -51,7 +52,7 @@
             // 
             this.labelActualStatus.AutoSize = true;
             this.labelActualStatus.ForeColor = System.Drawing.Color.Red;
-            this.labelActualStatus.Location = new System.Drawing.Point(162, 24);
+            this.labelActualStatus.Location = new System.Drawing.Point(77, 24);
             this.labelActualStatus.Name = "labelActualStatus";
             this.labelActualStatus.Size = new System.Drawing.Size(143, 20);
             this.labelActualStatus.TabIndex = 1;
@@ -104,11 +105,22 @@
             this.comando.Name = "comando";
             this.comando.ReadOnly = true;
             // 
+            // btnEncerrar
+            // 
+            this.btnEncerrar.Location = new System.Drawing.Point(226, 12);
+            this.btnEncerrar.Name = "btnEncerrar";
+            this.btnEncerrar.Size = new System.Drawing.Size(163, 29);
+            this.btnEncerrar.TabIndex = 3;
+            this.btnEncerrar.Text = "Encerrar Sessão";
+            this.btnEncerrar.UseVisualStyleBackColor = true;
+            this.btnEncerrar.Click += new System.EventHandler(this.btnEncerrar_Click);
+            // 
             // Servidor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(401, 326);
+            this.Controls.Add(this.btnEncerrar);
             this.Controls.Add(this.dgvComando);
             this.Controls.Add(this.labelActualStatus);
             this.Controls.Add(this.labelStatus);
@@ -132,5 +144,6 @@
         private System.Windows.Forms.DataGridView dgvComando;
         private System.Windows.Forms.DataGridViewTextBoxColumn usuario;
         private System.Windows.Forms.DataGridViewTextBoxColumn comando;
+        private System.Windows.Forms.Button btnEncerrar;
     }
 }

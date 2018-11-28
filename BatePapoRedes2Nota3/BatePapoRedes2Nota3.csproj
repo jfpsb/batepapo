@@ -53,7 +53,6 @@
     <Compile Include="BatePapo.Designer.cs">
       <DependentUpon>BatePapo.cs</DependentUpon>
     </Compile>
-    <Compile Include="data\Cliente.cs" />
     <Compile Include="data\Usuario.cs" />
     <Compile Include="Login.cs">
       <SubType>Form</SubType>
