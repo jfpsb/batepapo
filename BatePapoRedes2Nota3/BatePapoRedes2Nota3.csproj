@@ -47,31 +47,38 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BatePapo.cs">
+    <Compile Include="controller\BatePapoController.cs" />
+    <Compile Include="controller\TelaLoginController.cs" />
+    <Compile Include="view\BatePapo.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="BatePapo.Designer.cs">
+    <Compile Include="view\BatePapo.Designer.cs">
       <DependentUpon>BatePapo.cs</DependentUpon>
     </Compile>
-    <Compile Include="data\Usuario.cs" />
-    <Compile Include="Login.cs">
+    <Compile Include="controller\ServidorController.cs" />
+    <Compile Include="controller\util\Util.cs" />
+    <Compile Include="view\ILoginView.cs" />
+    <Compile Include="view\Login.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Login.Designer.cs">
+    <Compile Include="view\Login.Designer.cs">
       <DependentUpon>Login.cs</DependentUpon>
     </Compile>
+    <Compile Include="modelo\Usuario.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Servidor.cs">
+    <Compile Include="view\IBatePapoView.cs" />
+    <Compile Include="view\Servidor.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Servidor.Designer.cs">
+    <Compile Include="view\Servidor.Designer.cs">
       <DependentUpon>Servidor.cs</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="BatePapo.resx">
+    <Compile Include="view\IServidorView.cs" />
+    <EmbeddedResource Include="view\BatePapo.resx">
       <DependentUpon>BatePapo.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Login.resx">
+    <EmbeddedResource Include="view\Login.resx">
       <DependentUpon>Login.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -83,10 +90,10 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <EmbeddedResource Include="Servidor.resx">
+    <EmbeddedResource Include="view\Servidor.resx">
       <DependentUpon>Servidor.cs</DependentUpon>
     </EmbeddedResource>
-    <None Include="data\usuarios.json" />
+    <None Include="modelo\usuarios.json" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -100,5 +107,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

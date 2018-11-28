@@ -15,6 +15,8 @@ namespace BatePapoRedes2Nota3
         [STAThread]
         static void Main()
         {
+            Thread.CurrentThread.SetApartmentState(ApartmentState.STA);
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -25,25 +27,34 @@ namespace BatePapoRedes2Nota3
             threadLogin.Start();
         }
 
+        [STAThread]
         private static void AbreTelaLogin()
         {
-            Login telaLogin = new Login();
-            DialogResult dialogResult = telaLogin.ShowDialog();
-
-            if (dialogResult == DialogResult.OK)
+            try
             {
-                BatePapo batePapo = new BatePapo();
-                batePapo.Login_Usuario = telaLogin.LoginUsuario();
+                Login telaLogin = new Login();
+                DialogResult dialogResult = telaLogin.ShowDialog();
 
-                Application.Run(batePapo);
+                if (dialogResult == DialogResult.OK)
+                {
+                    BatePapo batePapo = new BatePapo();
+                    batePapo.SetUsuario(telaLogin.Usuario);
+
+                    Application.Run(batePapo);
+                }
+                else
+                {
+                    Application.ExitThread();
+                    Application.Exit();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Application.ExitThread();
-                Application.Exit();
+                MessageBox.Show(ex.Message);
             }
         }
 
+        [STAThread]
         private static void AbreTelaServidor()
         {
             new Servidor().ShowDialog();
