@@ -6,6 +6,9 @@ using System.Windows.Forms;
 
 namespace BatePapoRedes2Nota3
 {
+    /// <summary>
+    /// View da tela de bate papo
+    /// </summary>
     public partial class BatePapo : Form, IBatePapoView
     {
         public BatePapo()

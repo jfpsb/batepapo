@@ -7,12 +7,12 @@ namespace BatePapoRedes2Nota3.controller.util
     {
         public static byte[] RetornaEmByteArray(String mensagem)
         {
-            return Encoding.ASCII.GetBytes(mensagem);
+            return Encoding.UTF8.GetBytes(mensagem);
         }
 
         public static String RetornaEmString(byte[] vetor)
         {
-            return Encoding.ASCII.GetString(vetor);
+            return Encoding.UTF8.GetString(vetor);
         }
     }
 }

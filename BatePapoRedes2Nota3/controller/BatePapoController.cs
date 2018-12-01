@@ -9,6 +9,9 @@ using System.Windows.Forms;
 
 namespace BatePapoRedes2Nota3.controller
 {
+    /// <summary>
+    /// Controlador da tela de bate papo
+    /// </summary>
     class BatePapoController
     {
         private Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -22,94 +25,86 @@ namespace BatePapoRedes2Nota3.controller
             this.batePapoView = batePapoView;
         }
 
+        /// <summary>
+        /// Realiza a conexão com o servidor e envia o comando "logou" para o servidor. O BeginSend envia a requisição de forma assíncrona
+        /// e logo depois é acionado o estado de receber do servidor pelo BeginReceive
+        /// </summary>
         public void Conectar()
         {
+            //Como estou rodando localmente, uso o Loopback (127.0.0.1)
             socket.Connect(IPAddress.Loopback, 3500);
 
             String requisicao_do_cliente = "logou " + usuarioModel.login;
 
+            //Envia ao servidor comando logou
             socket.BeginSend(Util.RetornaEmByteArray(requisicao_do_cliente), 0, Util.RetornaEmByteArray(requisicao_do_cliente).Length, SocketFlags.None, SendCallback, socket);
+            //Começa a ouvir servidor
             socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
         }
 
+        /// <summary>
+        /// Método callback responsável por tratar a operação de Send do socket
+        /// </summary>
+        /// <param name="asyncResult">Guarda estado da operação assíncrona, no caso o socket</param>
         private void SendCallback(IAsyncResult asyncResult)
         {
             Socket socket = (Socket)asyncResult.AsyncState;
-
-            if(socket.Connected)
-            {
-                socket.EndSend(asyncResult);
-            }
+            socket.EndSend(asyncResult);
         }
 
+        /// <summary>
+        /// Método callback responsável por tratar a operação Receive do socket. Quando o servidor envia algo é aqui que é tratado.
+        /// </summary>
+        /// <param name="asyncResult">Guarda estado da operação assíncrona, no caso o socket</param>
         private void ReceiveCallback(IAsyncResult asyncResult)
         {
             Socket socket = (Socket)asyncResult.AsyncState;
 
-            if (socket.Connected)
+            // Tamanho do vetor byte com os dados do servidor
+            int index = socket.EndReceive(asyncResult);
+
+            // Crio vetor de byte com tamanho exato da mensagem
+            byte[] recebido_do_servidor_tamanho_exato = new byte[index];
+
+            // Copio do vetor maior para o com tamanho exato para eliminar os campos vazios do vetor maior
+            Array.Copy(recebido_do_servidor, recebido_do_servidor_tamanho_exato, index);
+
+            // A primeira palavra da mensagem é o comando
+            String comando = Util.RetornaEmString(recebido_do_servidor_tamanho_exato).Split(new char[] { ' ' })[0];
+
+            switch (comando)
             {
-                int index = socket.EndReceive(asyncResult);
-
-                byte[] recebido_do_servidor_tamanho_exato = new byte[index];
-
-                Array.Copy(recebido_do_servidor, recebido_do_servidor_tamanho_exato, index);
-
-                String comando = Util.RetornaEmString(recebido_do_servidor_tamanho_exato).Split(new char[] { ' ' })[0];
-
-                switch (comando)
-                {
-                    case "logou":
-                        Logou(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                        break;
-                    case "msg":
-                        Mensagem(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                        break;
-                    case "exit":
-                        Exit(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
-                        break;
-                    case "shutdown":
-                        Shutdown();
-                        break;
-                    default:
-                        break;
-                }
+                case "logou":
+                    Logou(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                    break;
+                case "msg":
+                    Mensagem(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                    break;
+                case "exit":
+                    Exit(Util.RetornaEmString(recebido_do_servidor_tamanho_exato));
+                    break;
+                case "shutdown":
+                    Shutdown();
+                    break;
+                default:
+                    break;
             }
         }
 
+        /// <summary>
+        /// Inicia a thread do comando shutdown para encerrar a sessão
+        /// </summary>
         private void Shutdown()
         {
-            Thread t = new Thread(new ParameterizedThreadStart(contador));
-            t.Start(DateTime.Now);
+            Thread shutdownThread = new Thread(new ParameterizedThreadStart(ShutdownThread));
+            shutdownThread.Start(DateTime.Now);
         }
 
-        public void EnviarMensagem(String mensagem)
-        {
-            String msg = mensagem.Trim(new char[] { ' ', '\r', '\n' });
-            String requisicao_do_cliente = null;
-
-            batePapoView.LimparMensagem();
-
-            if (msg != String.Empty && socket.Connected)
-            {
-                switch (msg)
-                {
-                    case "exit":
-                        requisicao_do_cliente = "exit " + usuarioModel.login;
-                        batePapoView.Fechar();
-                        break;
-                    default:
-                        requisicao_do_cliente = "msg " + usuarioModel.login + " " + msg;
-                        break;
-                }
-
-                socket.BeginSend(Util.RetornaEmByteArray(requisicao_do_cliente), 0, Util.RetornaEmByteArray(requisicao_do_cliente).Length, SocketFlags.None, SendCallback, socket);
-
-                if(socket.Connected)
-                    socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
-            }
-        }
-
-        private void contador(object data)
+        /// <summary>
+        /// Responsável por mostrar ao usuário a contagem de 10 segundos para fechamento do bate papo
+        /// </summary>
+        /// <param name="data">Momento em que o comando foi enviado pelo servidor</param>
+        private void ShutdownThread(object data)
         {
             DateTime horaComando = (DateTime)data;
 
@@ -126,18 +121,60 @@ namespace BatePapoRedes2Nota3.controller
             batePapoView.AlterarTextoTxtAviso("A sessão do bate papo foi encerrada pelo administrador");
         }
 
+        /// <summary>
+        /// Método que trata o envio das mensagens do bate papo para servidor
+        /// </summary>
+        /// <param name="mensagem">Conteúdo da mensagem</param>
+        public void EnviarMensagem(String mensagem)
+        {
+            String msg = mensagem.Trim(new char[] { ' ', '\r', '\n' });
+            String requisicao_do_cliente = null;
+
+            batePapoView.LimparMensagem();
+
+            if (msg != String.Empty && socket.Connected)
+            {
+                switch (msg)
+                {
+                    //Se o usuário digitar exit vai acionar o comando de fechar bate papo
+                    case "exit":
+                        //O envio do comando exit é feito no evento de fechamento da tela
+                        batePapoView.Fechar();
+                        break;
+                    default:
+                        //Qualquer outra mensagem é tratada como mensagem do bate papo
+                        requisicao_do_cliente = "msg " + usuarioModel.login + " " + msg;
+                        socket.BeginSend(Util.RetornaEmByteArray(requisicao_do_cliente), 0, Util.RetornaEmByteArray(requisicao_do_cliente).Length, SocketFlags.None, SendCallback, socket);
+                        //socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Responsável por tratar as mensagens sendo replicadas dos outros usuários pelo servidor
+        /// </summary>
+        /// <param name="requisicao">Comando enviado pelo servidor</param>
         private void Mensagem(String requisicao)
         {
+            //remove comando msg
             String mensagem = requisicao.Remove(0, 4);
 
+            //Extrai usuário que mandou mensagem
             String usuario = mensagem.Split(new char[] { ' ' })[0];
-            mensagem = mensagem.Remove(0, usuario.Length + 1);
+
+            //Mensagem de fato
+            mensagem = mensagem.Remove(0, usuario.Length + 1);            
 
             batePapoView.AdicionarComandoDataGridView(usuario, mensagem);
 
             socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
         }
 
+        /// <summary>
+        /// Responsável por informar aos usuários no bate papo se alguém saiu da sessão
+        /// </summary>
+        /// <param name="requisicao">Comando enviado pelo servidor</param>
         private void Exit(String requisicao)
         {
             String usuario = requisicao.Split(new char[] { ' ' })[1];
@@ -145,8 +182,14 @@ namespace BatePapoRedes2Nota3.controller
             String exit_msg = "Usuário " + usuario + " saiu da sala de bate papo!";
 
             batePapoView.AlterarTextoTxtAviso(exit_msg);
+
+            socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
         }
 
+        /// <summary>
+        /// Responsável por informar aos usuários no bate papo quem entrou na sessão
+        /// </summary>
+        /// <param name="requisicao">Comando enviado pelo servidor</param>
         private void Logou(String requisicao)
         {
             String usuario = requisicao.Split(new char[] { ' ' })[1];
@@ -158,6 +201,9 @@ namespace BatePapoRedes2Nota3.controller
             socket.BeginReceive(recebido_do_servidor, 0, recebido_do_servidor.Length, SocketFlags.None, ReceiveCallback, socket);
         }
 
+        /// <summary>
+        /// Método chamado na view que envia o comando exit
+        /// </summary>
         public void FecharTelaBatePapo()
         {
             if (socket.Connected)
@@ -166,7 +212,9 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
-        [STAThread]
+        /// <summary>
+        /// Método que abre nova tela de bate papo
+        /// </summary>
         private void AbrirOutroBatePapo()
         {
             Login telaLogin = new Login();
@@ -184,24 +232,23 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
+        /// <summary>
+        /// Configura usuário proprietário da sessão no bate papo
+        /// </summary>
+        /// <param name="usuario">Usuário logado</param>
         public void SetUsuario(Usuario usuario)
         {
             usuarioModel = usuario;
             batePapoView.ConfiguraTituloBatePapo(usuarioModel.login);
         }
 
+        /// <summary>
+        /// Inicia thread para abrir outro bate papo
+        /// </summary>
         public void MenuStripAbrirOutroBatePapo()
         {
             threadLogin = new Thread(AbrirOutroBatePapo);
             threadLogin.Start();
-        }
-
-        public String Usuario_Login
-        {
-            get
-            {
-                return usuarioModel.login;
-            }
         }
     }
 }

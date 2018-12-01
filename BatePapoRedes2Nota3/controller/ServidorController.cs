@@ -10,6 +10,9 @@ using System.Threading;
 
 namespace BatePapoRedes2Nota3.controller
 {
+    /// <summary>
+    /// Controlador da tela de servidor
+    /// </summary>
     class ServidorController
     {
         IServidorView servidorView;
@@ -29,15 +32,24 @@ namespace BatePapoRedes2Nota3.controller
             shutdownThread = new Thread(ShutdownThread);
         }
 
+        /// <summary>
+        /// Inicia o servidor do bate papo na porta 3500
+        /// </summary>
         public void IniciaServidor()
         {
+            //Abre socket ouvinte configurado para IPv4, stream de bytes e protocolo TCP
             ouvinte = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
+            //Representa IP e porta
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 3500);
 
+            //Atribui o IP e porta ao socket ouvinte
             ouvinte.Bind(endPoint);
+
+            //Inicia o processo de ouvir no socket e limita o número de requisições ao mesmo tempo para 10
             ouvinte.Listen(10);
 
+            //Inicia processo assíncrono de aceitar conexões solicitadas
             ouvinte.BeginAccept(AcceptCallback, null);
 
             servidorView.AlteraStatus("CONECTADO", Color.DarkGreen);
@@ -66,16 +78,20 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
+        /// <summary>
+        /// Responsável por processar os envios do servidor para clientes
+        /// </summary>
+        /// <param name="asyncResult">Representa o estado da operação assíncrona</param>
         private void SendCallback(IAsyncResult asyncResult)
         {
             Socket socket_cliente = (Socket)asyncResult.AsyncState;
-
-            if (socket_cliente.Connected)
-            {
-                socket_cliente.EndSend(asyncResult);
-            }
+            socket_cliente.EndSend(asyncResult);
         }
 
+        /// <summary>
+        /// Responsável por processar o que é enviado dos clientes para o servidor
+        /// </summary>
+        /// <param name="asyncResult"></param>
         private void ReceiveCallback(IAsyncResult asyncResult)
         {
             //Socket que enviou algo ao servidor
@@ -83,8 +99,10 @@ namespace BatePapoRedes2Nota3.controller
 
             if (socket_cliente.Connected)
             {
+                //Captura tamanho do vetor com requisição do cliente
                 int tamanho_receive = socket_cliente.EndReceive(asyncResult);
 
+                //Cria vetor com tamanho exato do que foi enviado ao servidor
                 byte[] recebe_do_cliente_tamanho_exato = new byte[tamanho_receive];
 
                 //Copia a mensagem do cliente e coloca em um vetor de bytes de tamanho exato ao da mensagem
@@ -94,6 +112,7 @@ namespace BatePapoRedes2Nota3.controller
                 //String do comando enviado pelo cliente que será tratado pelo servidor
                 String requisicao_do_cliente = Util.RetornaEmString(recebe_do_cliente_tamanho_exato);
 
+                //Comando é a primeira palavra da requisição
                 String comando = requisicao_do_cliente.Split(new char[] { ' ' })[0];
 
                 switch (comando)
@@ -116,6 +135,9 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
+        /// <summary>
+        /// Responsável por iniciar thread que executa o comando shutdown
+        /// </summary>
         public void Shutdown()
         {
             try
@@ -128,6 +150,9 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
+        /// <summary>
+        /// Responsável por encerrar a sessão do bate papo para todos os clientes
+        /// </summary>
         private void ShutdownThread()
         {
             try
@@ -136,18 +161,22 @@ namespace BatePapoRedes2Nota3.controller
 
                 resposta_ao_cliente = Util.RetornaEmByteArray("shutdown");
 
+                //Envia o comando shutdown para todos os clientes
                 foreach (KeyValuePair<String, Socket> usuario_em_sessao in usuarios_em_sessao)
                 {
                     Socket socket_cliente = usuario_em_sessao.Value;
                     socket_cliente.BeginSend(resposta_ao_cliente, 0, resposta_ao_cliente.Length, SocketFlags.None, SendCallback, socket_cliente);
                 }
 
-                Thread.Sleep(10000);
+                //Aguarda 11 segundos para encerrar socket ouvinte
+                Thread.Sleep(11000);
 
+                //Limpa dicionário de clientes
                 usuarios_em_sessao.Clear();
                 servidorView.AlteraStatus("DESCONECTADO", Color.Red);
                 servidorView.AdicionarComandoDataGridView("Admin", "shutdown");
 
+                //Encerrar comunicação do ouvinte
                 ouvinte.Shutdown(SocketShutdown.Both);
             }
             catch (SocketException se)
@@ -164,6 +193,11 @@ namespace BatePapoRedes2Nota3.controller
             }
         }
 
+        /// <summary>
+        /// Processa a requisição de login
+        /// </summary>
+        /// <param name="requisicao">Comando enviado da tela de login para servidor</param>
+        /// <param name="socket_cliente">Socket conectado ao ouvinte</param>
         private void Login(String requisicao, Socket socket_cliente)
         {
             byte[] resposta_ao_cliente = new byte[100];
@@ -177,6 +211,7 @@ namespace BatePapoRedes2Nota3.controller
                 String login = chaves_requisicao[1];
                 String senha = chaves_requisicao[2];
 
+                //Testa se usuário já não está logado no bate papo
                 if (usuarios_em_sessao.ContainsKey(login))
                 {
                     resposta_ao_cliente = Util.RetornaEmByteArray("Já existe uma sessão aberta no bate papo com este usuário.");
@@ -202,9 +237,13 @@ namespace BatePapoRedes2Nota3.controller
             }
 
             socket_cliente.BeginSend(resposta_ao_cliente, 0, resposta_ao_cliente.Length, SocketFlags.None, SendCallback, socket_cliente);
-            socket_cliente.BeginReceive(recebe_do_cliente, 0, recebe_do_cliente.Length, SocketFlags.None, ReceiveCallback, socket_cliente);
         }
 
+        /// <summary>
+        /// Responsável por receber usuário que logou no bate papo, salva o usuário e o seu socket no dicionário
+        /// </summary>
+        /// <param name="requisicao">Comando enviado da tela de login para servidor</param>
+        /// <param name="socket_cliente">Socket conectado ao ouvinte</param>
         private void Logou(String requisicao, Socket socket_cliente)
         {
             byte[] resposta_ao_cliente = Util.RetornaEmByteArray(requisicao);
@@ -218,11 +257,18 @@ namespace BatePapoRedes2Nota3.controller
             foreach (KeyValuePair<String, Socket> usuario_em_sessao in usuarios_em_sessao)
             {
                 Socket socket_usuario = usuario_em_sessao.Value;
+                //Envia aos outros clientes que este cliente logou
                 socket_usuario.BeginSend(resposta_ao_cliente, 0, resposta_ao_cliente.Length, SocketFlags.None, SendCallback, socket_usuario);
-                socket_cliente.BeginReceive(recebe_do_cliente, 0, recebe_do_cliente.Length, SocketFlags.None, ReceiveCallback, socket_cliente);
             }
+
+            //Socket que logou começa a esperar receber do servidor
+            socket_cliente.BeginReceive(recebe_do_cliente, 0, recebe_do_cliente.Length, SocketFlags.None, ReceiveCallback, socket_cliente);
         }
 
+        /// <summary>
+        /// Responsável por processar as mensagens enviadas dos clientes
+        /// </summary>
+        /// <param name="requisicao">Comando enviado para o servidor</param>
         private void Mensagem(String requisicao)
         {
             byte[] resposta_ao_cliente = new byte[1024];
